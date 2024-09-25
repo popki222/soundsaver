@@ -17,6 +17,9 @@
     height: 50px;
     padding-left: 4rem;
   }
+  .logo:hover {
+    filter: drop-shadow(0 0 2em #ff6464);
+  }
   
   .navLinks {
     list-style: none;

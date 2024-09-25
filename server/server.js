@@ -9,7 +9,9 @@ app.listen(5000, ()=> {console.log("Server started on port 5000")})
 
 const meFunctions = require("./routes/Me/meFunctions")
 const getUserLikes = require("./routes/Me/getUserLikes")
+const getDbLikes = require("./routes/Me/displayDB")
 
+app.use("/db", getDbLikes)
 app.use("/me", meFunctions)
 app.use("/test", getUserLikes)
 

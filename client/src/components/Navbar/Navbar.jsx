@@ -1,11 +1,12 @@
 import React from 'react';
 import classes from './Navbar.module.css';
+import musicHeart from '../../assets/music_heart2.png';
 
 function Header() {
   return (
     <header className={classes.header}>
       <div className={classes.logo}>
-        <img src="/path/to/your/logo.png" alt="Logo" />
+        <img src={musicHeart} alt="Logo" />
       </div>
       <nav>
         <ul className={classes.navLinks}>
