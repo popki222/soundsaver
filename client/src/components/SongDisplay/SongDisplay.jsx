@@ -1,56 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import musicHeart from '../../assets/music_heart.png';
 import classes from './SongDisplay.module.css';
+import axios from 'axios';
 
 function SongDisplay() {
-  const [shadow, setShadow] = useState('0 3px 6px rgba(0, 0, 0, 0.2)');
+  const [data, setData] = useState([])
+  const [filter, setFilter] = useState('true');
+  const [click, setClick] = useState(0)
 
-  const handleMouseMove = (e) => {
-    const card = document.querySelector(`.${classes.card}`);
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
+  useEffect(()=>{
+    axios.get('http://localhost:5000/db')
+    .then(res => setData(res.data))
+    .catch(err => console.log(err))
+  }, [click])
 
-    const shadowX = -x / 22;
-    const shadowY = -y / 22;
-
-    // Use requestAnimationFrame to ensure smooth updates
-    window.requestAnimationFrame(() => {
-      setShadow(`${shadowX}px ${shadowY}px 20px rgba(0, 0, 0, 0.2)`);
-    });
+  const handleToggle = (type) => {
+    setFilter(type); // Update the filter state based on button clicked
   };
 
-  useEffect(() => {
-    // Add throttling to the mouse move event
-    let throttleTimeout = null;
-    const throttledMouseMove = (e) => {
-      if (throttleTimeout) return;
-      throttleTimeout = setTimeout(() => {
-        handleMouseMove(e);
-        throttleTimeout = null;
-      }, 16); // Approx. 60 FPS
-    };
+  const filteredData = data.filter(song => song.active === filter);
 
-    window.addEventListener('mousemove', throttledMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', throttledMouseMove);
-    };
-  }, []);
+  const runScan = async () => {
+    try{
+        await axios.get('http://localhost:5000/test/scan')
+        setClick(click+1);
+    } catch(err){
+        console.log(err)
+    }
+  };
+
 
   return (
-    <div className={classes.card} style={{ boxShadow: shadow }}>
-      
-      <h1>Your Soundcloud Library</h1>
+    <div>
+      <div className={classes.toggleButtons}>
+        <button onClick={() => handleToggle('true')}>Current Library</button>
+        <button onClick={() => handleToggle('false')}>Missing Tracks</button>
+      </div>
+      <div className={classes.table}>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Title</th>
+              <th>Artist</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              filteredData.map((user, index) => {
+                return <tr key={index}>
+                      <td>
+                        <a href={user.permalink_url}>
+                          <img src={user.artwork_url}></img>
+                        </a>
+                      </td>
+                      <td>{user.title}</td>
+                      <td>{user.artist}</td>
+                </tr>
+              })
+            }
+          </tbody>
+        </table>
+      </div>
       <div className={classes.buttons}>
-      <button className={classes.pushable}>
+      <button className={classes.pushable} onClick={runScan}>
         <span className={classes.shadow}></span>
         <span className={classes.edge}></span>
         <span className={classes.front}>
             Run Scan
         </span>
       </button>
-
-      
       </div>
     </div>
   );

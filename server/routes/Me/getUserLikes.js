@@ -37,17 +37,33 @@ async function saveScannedSongs(likedSongs) {
             const { track_id, title, artist, artwork_url, permalink_url } = parsedSong;
 
             const query = `
-                INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url, status)
-                VALUES ($1, $2, $3, $4, $5, 'active')
-                ON CONFLICT (track_id) DO UPDATE SET status = 'active', scan_time = CURRENT_TIMESTAMP;
+                INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url, active)
+                VALUES ($1, $2, $3, $4, $5, 'true')
+                ON CONFLICT (track_id) DO UPDATE SET active = 'true', scan_time = CURRENT_TIMESTAMP;
             `;
             await client.query(query, [track_id, title, artist, artwork_url, permalink_url]);
         }));
-        client.release();
+        await client.release();
         return true;
     } catch (error) {
         console.error('Error saving songs:', error.stack);
         return false;
+    }
+}
+
+async function deactivateOldSongs() {
+    const client = await pool.connect();
+    try {
+        const deactivateQuery = `
+            UPDATE songs
+            SET active = 'false'
+            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = 'true';
+        `;
+        await client.query(deactivateQuery);
+    } catch (error) {
+        console.error('Error deactivating old songs:', error);
+    } finally {
+        await client.end();
     }
 }
 
@@ -58,6 +74,7 @@ router.get('/scan', async (req, res) => {
         if (userLikes) {
             const success = await saveScannedSongs(userLikes);
             if (success) {
+                await deactivateOldSongs();
                 res.status(200).send('Songs fetched and stored successfully');
             } else {
                 res.status(500).send('Error saving songs to database');
