@@ -36,8 +36,9 @@ function SongDisplay() {
         <button onClick={() => handleToggle('true')}>Current Library</button>
         <button onClick={() => handleToggle('false')}>Missing Tracks</button>
       </div>
-      <div className={classes.table}>
-        <table>
+      <div className={classes.tableContainer}>
+      <div className={classes.scrollableContainer}>
+        <table className={classes.songTable}>
           <thead>
             <tr>
               <th></th>
@@ -61,6 +62,7 @@ function SongDisplay() {
             }
           </tbody>
         </table>
+        </div>
       </div>
       <div className={classes.buttons}>
       <button className={classes.pushable} onClick={runScan}>
