@@ -103,6 +103,33 @@
     height: auto;
   }
   
+  .searchBar {
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 10px;
+  }
+
+  .searchBar input {
+    padding: 10px;
+    width: 80%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    color: black;
+  }
+  .searchBar2{
+    background-color: #dedede;
+    border-radius: 4px;
+    
+  }
+
+  .searchBar2:focus {
+    outline: none;
+    border: 2px solid #f84c4c; /* Change border color on focus */
+    
+  }
+
+
   /*button from joshwcomeau.com*/
   
   .pushable {

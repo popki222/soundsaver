@@ -7,6 +7,7 @@ function SongDisplay() {
   const [data, setData] = useState([])
   const [filter, setFilter] = useState('true');
   const [click, setClick] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(()=>{
     axios.get('http://localhost:5000/db')
@@ -15,10 +16,14 @@ function SongDisplay() {
   }, [click])
 
   const handleToggle = (type) => {
-    setFilter(type); // Update the filter state based on button clicked
+    setFilter(type);
   };
 
-  const filteredData = data.filter(song => song.active === filter);
+  const filteredData = data
+    .filter((song) => song.active === filter)
+    .filter ((song) =>
+      song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      song.artist.toLowerCase().includes(searchQuery.toLowerCase()))
 
   const runScan = async () => {
     try{
@@ -32,6 +37,14 @@ function SongDisplay() {
 
   return (
     <div>
+      <div className={classes.searchBar}>
+        <input className={classes.searchBar2}
+          type="text"
+          placeholder="Search by title or artist..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
       <div className={classes.toggleButtons}>
         <button onClick={() => handleToggle('true')}>Current Library</button>
         <button onClick={() => handleToggle('false')}>Missing Tracks</button>
