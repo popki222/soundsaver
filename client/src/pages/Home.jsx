@@ -14,7 +14,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function Home() {
   const [session, setSession] = useState(null);
-  const [isUserAdded, setIsUserAdded] = useState(false);
+  const [isUserChecked, setIsUserChecked] = useState(false);
+  
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -30,22 +31,41 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
-   const addUser = async (userData) => {
+  const addUser = async (userData) => {
     try {
       const response = await axios.post('http://localhost:5000/user/addUser', userData)
       console.log('User added successfully:', response.data);
     } catch (err) {
       console.error('Error adding user:', err);
     }
-  }
-
-  useEffect(() => {
-    if (session && !isUserAdded) {
-      addUser(session.user);
-      setIsUserAdded(true);
-      console.log("user added")
+  };
+  
+  const checkUserExists = async (email) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/user/checkUser?email=${email}`);
+      return response.data;
+    } catch (err) {
+      console.error('Error checking user:', err);
+      return false;
     }
-  }, [session, isUserAdded]);
+  };
+  
+  useEffect(() => {
+    const handleUser = async () => {
+      console.log("handleUser ran: checked if user exists already")
+      if (session && !isUserChecked) {
+        const userExists = await checkUserExists(session.user.email);
+        if (!userExists) {
+          await addUser(session.user);
+        }
+        setIsUserChecked(true);
+      }
+    };
+
+    if (session && !isUserChecked) {
+      handleUser();
+    }
+  }, [session]);
   
 
   if (!session) {
