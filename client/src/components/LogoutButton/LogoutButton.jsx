@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../pages/Home'; 
-import { Navigate, useNavigate } from 'react-router-dom';
+import {  useNavigate } from 'react-router-dom';
 
 function Logout() {
   const [error, setError] = useState(null);

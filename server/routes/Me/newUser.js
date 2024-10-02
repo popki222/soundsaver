@@ -5,6 +5,7 @@ const pool = require(path.join(__dirname, '../../db'));
 
 
 router.post('/addUser', async (req, res) => {
+    console.log(req.body)
     const { id, email, created_at } = req.body;
   
     try {
@@ -18,7 +19,5 @@ router.post('/addUser', async (req, res) => {
       res.status(500).send('Error adding user');
     }
   });
-  
-  module.exports = router;
 
 module.exports = router;
