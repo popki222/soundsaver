@@ -19,7 +19,7 @@ async function fetchDatabaseSongs() {
     
 }
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res) => { //prob gonna query userid and filter with that
     try {
         const dbLikes = await fetchDatabaseSongs();
         if (dbLikes) {

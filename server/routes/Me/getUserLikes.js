@@ -28,8 +28,8 @@ async function fetchLikes() {
     }
 }
 
-// Save scanned songs to the database
-async function saveScannedSongs(likedSongs) {
+// delete active and scan_time from songs and update query
+async function saveScannedSongs(likedSongs, userid) {
     try {
         const client = await pool.connect();
         await Promise.all(likedSongs.map(async (song) => {
@@ -39,9 +39,17 @@ async function saveScannedSongs(likedSongs) {
             const query = `
                 INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url, active)
                 VALUES ($1, $2, $3, $4, $5, 'true')
-                ON CONFLICT (track_id) DO UPDATE SET active = 'true', scan_time = CURRENT_TIMESTAMP;
+                ON CONFLICT (track_id) DO UPDATE SET active = 'true', scan_time = CURRENT_TIMESTAMP
+                RETURNING id;
             `;
-            await client.query(query, [track_id, title, artist, artwork_url, permalink_url]);
+            const songResult = await client.query(query, [track_id, title, artist, artwork_url, permalink_url]);
+            const songPkey = songResult.rows[0].id;
+            const userSongsQuery = `
+                INSERT INTO user_songs (user_id, song_id, added_at, active, scan_time)
+                VALUES ($1, $2, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP )
+                ON CONFLICT (user_id, song_id) DO UPDATE SET active = true, scan_time = CURRENT_TIMESTAMP;
+            `
+            await client.query(userSongsQuery, [userid, songPkey]);
         }));
         await client.release();
         return true;
@@ -50,7 +58,7 @@ async function saveScannedSongs(likedSongs) {
         return false;
     }
 }
-
+//deactivate on songs table not needed once the columns are removed
 async function deactivateOldSongs() {
     const client = await pool.connect();
     try {
@@ -59,7 +67,13 @@ async function deactivateOldSongs() {
             SET active = 'false'
             WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = 'true';
         `;
+        const searchActive = `
+            UPDATE user_songs
+            SET active = false
+            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = true;
+        `;
         await client.query(deactivateQuery);
+        await client.query(searchActive);
     } catch (error) {
         console.error('Error deactivating old songs:', error);
     } finally {
@@ -67,12 +81,13 @@ async function deactivateOldSongs() {
     }
 }
 
-// GET route for fetching and scanning user likes
+
 router.get('/scan', async (req, res) => {
     try {
-        const userLikes = await fetchLikes();
+        const userid = req.query.id;
+        const userLikes = await fetchLikes(); //probably will have to pass scUserid from client - for later
         if (userLikes) {
-            const success = await saveScannedSongs(userLikes);
+            const success = await saveScannedSongs(userLikes, userid);
             if (success) {
                 await deactivateOldSongs();
                 res.status(200).send('Songs fetched and stored successfully');
@@ -88,6 +103,3 @@ router.get('/scan', async (req, res) => {
 });
 
 module.exports = router;
-
-//create create a function that takes the SoundcloudTrack object and extracts only the properties you need for your application (e.g., title, artist, artwork_url, id, and permalink_url).
-// then make a post req to your database

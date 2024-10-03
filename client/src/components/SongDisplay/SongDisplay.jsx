@@ -3,14 +3,14 @@ import musicHeart from '../../assets/music_heart.png';
 import classes from './SongDisplay.module.css';
 import axios from 'axios';
 
-function SongDisplay() {
+function SongDisplay({ userid }) {
   const [data, setData] = useState([])
   const [filter, setFilter] = useState('true');
   const [click, setClick] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(()=>{
-    axios.get('http://localhost:5000/db')
+    axios.get('http://localhost:5000/db') //will get from user_songs instead of songs
     .then(res => setData(res.data))
     .catch(err => console.log(err))
   }, [click])
@@ -27,7 +27,7 @@ function SongDisplay() {
 
   const runScan = async () => {
     try{
-        await axios.get('http://localhost:5000/test/scan')
+        await axios.get(`http://localhost:5000/test/scan?id=${userid}`)
         setClick(click+1);
     } catch(err){
         console.log(err)

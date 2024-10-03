@@ -52,7 +52,7 @@ export default function Home() {
   
   useEffect(() => {
     const handleUser = async () => {
-      console.log("handleUser ran: checked if user exists already")
+      console.log("handleUser ran: checked if user already exists")
       if (session && !isUserChecked) {
         const userExists = await checkUserExists(session.user.email);
         if (!userExists) {
@@ -75,7 +75,7 @@ export default function Home() {
     return (
       <>
         <Navbar />
-        <Card />
+        <Card userid={session.user.id} />
         <Footer />
         
       </>

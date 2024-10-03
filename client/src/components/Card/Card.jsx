@@ -4,7 +4,7 @@ import classes from './Card.module.css';
 import axios from 'axios';
 import SongDisplay from '../SongDisplay/SongDisplay';
 
-function Card() {
+function Card({ userid }) {
   const [shadow, setShadow] = useState('0 3px 6px rgba(0, 0, 0, 0.2)');
 
   const handleMouseMove = (e) => {
@@ -44,7 +44,7 @@ function Card() {
       
       <h1>Your Soundcloud Library</h1>
 
-      <SongDisplay />
+      <SongDisplay userid={userid}/>
 
       
     </div>
