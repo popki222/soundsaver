@@ -10,7 +10,7 @@ function SongDisplay({ userid }) {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(()=>{
-    axios.get('http://localhost:5000/db') //will get from user_songs instead of songs
+    axios.get(`http://localhost:5000/db?userid=${userid}`)
     .then(res => setData(res.data))
     .catch(err => console.log(err))
   }, [click])
@@ -27,7 +27,7 @@ function SongDisplay({ userid }) {
 
   const runScan = async () => {
     try{
-        await axios.get(`http://localhost:5000/test/scan?id=${userid}`)
+        await axios.get(`http://localhost:5000/test/scan?userid=${userid}`)
         setClick(click+1);
     } catch(err){
         console.log(err)

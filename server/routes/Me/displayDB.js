@@ -6,10 +6,29 @@ const path = require('path');
 const pool = require(path.join(__dirname, '../../db'));
 
 
-async function fetchDatabaseSongs() {
+async function fetchDatabaseSongs(userID) {
     try{
         const client = await pool.connect();
-        const res = await client.query(`SELECT * FROM songs`)
+        const userSongsInfoQuery = `
+            SELECT 
+                s.id, 
+                s.track_id, 
+                s.title, 
+                s.artist, 
+                s.artwork_url, 
+                s.permalink_url, 
+                us.active, 
+                us.scan_time
+            FROM 
+                user_songs us
+            JOIN 
+                songs s 
+            ON 
+                s.id = us.song_id
+            WHERE 
+                us.user_id = $1;
+        `
+        const res = await client.query(userSongsInfoQuery, [userID])
         client.release()
         return res.rows
         
@@ -19,9 +38,10 @@ async function fetchDatabaseSongs() {
     
 }
 
-router.get('/', async (req, res) => { //prob gonna query userid and filter with that
+router.get('/', async (req, res) => {
     try {
-        const dbLikes = await fetchDatabaseSongs();
+        const currUserID = req.query.userid;
+        const dbLikes = await fetchDatabaseSongs(currUserID);
         if (dbLikes) {
             res.status(200).send(dbLikes);
         } else {

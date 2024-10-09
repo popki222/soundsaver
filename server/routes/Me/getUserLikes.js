@@ -29,6 +29,7 @@ async function fetchLikes() {
 }
 
 // delete active and scan_time from songs and update query
+//make sure to test a true and false with same songid but diff userid
 async function saveScannedSongs(likedSongs, userid) {
     try {
         const client = await pool.connect();
@@ -84,7 +85,7 @@ async function deactivateOldSongs() {
 
 router.get('/scan', async (req, res) => {
     try {
-        const userid = req.query.id;
+        const userid = req.query.userid;
         const userLikes = await fetchLikes(); //probably will have to pass scUserid from client - for later
         if (userLikes) {
             const success = await saveScannedSongs(userLikes, userid);
