@@ -5,7 +5,7 @@ import axios from 'axios';
 
 function SongDisplay({ userid }) {
   const [data, setData] = useState([])
-  const [filter, setFilter] = useState('true');
+  const [filter, setFilter] = useState(true);
   const [click, setClick] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -27,7 +27,7 @@ function SongDisplay({ userid }) {
 
   const runScan = async () => {
     try{
-        await axios.get(`http://localhost:5000/test/scan?userid=${userid}`)
+        await axios.get(`http://localhost:5000/get/scan?userid=${userid}`)
         setClick(click+1);
     } catch(err){
         console.log(err)
@@ -46,8 +46,8 @@ function SongDisplay({ userid }) {
         />
       </div>
       <div className={classes.toggleButtons}>
-        <button onClick={() => handleToggle('true')}>Current Library</button>
-        <button onClick={() => handleToggle('false')}>Missing Tracks</button>
+        <button onClick={() => handleToggle(true)}>Current Library</button>
+        <button onClick={() => handleToggle(false)}>Missing Tracks</button>
       </div>
       <div className={classes.tableContainer}>
       <div className={classes.scrollableContainer}>

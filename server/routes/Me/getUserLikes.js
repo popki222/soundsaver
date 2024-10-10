@@ -20,10 +20,10 @@ const parseTrackData = (track) => ({
 
 async function fetchLikes() {
     try {
-        const user = await soundcloud.users.likes(process.env.USERID);
-        return user;
+        const likes = await soundcloud.users.likes(process.env.USERID);
+        return likes;
     } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('Error fetching likes:', error);
         return null;
     }
 }
@@ -38,9 +38,9 @@ async function saveScannedSongs(likedSongs, userid) {
             const { track_id, title, artist, artwork_url, permalink_url } = parsedSong;
 
             const query = `
-                INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url, active)
-                VALUES ($1, $2, $3, $4, $5, 'true')
-                ON CONFLICT (track_id) DO UPDATE SET active = 'true', scan_time = CURRENT_TIMESTAMP
+                INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (track_id) DO UPDATE SET scan_time = CURRENT_TIMESTAMP
                 RETURNING id;
             `;
             const songResult = await client.query(query, [track_id, title, artist, artwork_url, permalink_url]);
@@ -59,21 +59,15 @@ async function saveScannedSongs(likedSongs, userid) {
         return false;
     }
 }
-//deactivate on songs table not needed once the columns are removed
+
 async function deactivateOldSongs() {
     const client = await pool.connect();
     try {
-        const deactivateQuery = `
-            UPDATE songs
-            SET active = 'false'
-            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = 'true';
-        `;
         const searchActive = `
             UPDATE user_songs
             SET active = false
             WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = true;
         `;
-        await client.query(deactivateQuery);
         await client.query(searchActive);
     } catch (error) {
         console.error('Error deactivating old songs:', error);
