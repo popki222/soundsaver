@@ -8,7 +8,7 @@ router.post('/addUser', async (req, res) => {
     const { id, email, created_at } = req.body;
     try {
       const result = await pool.query(
-        'INSERT INTO users (id, email, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        'INSERT INTO users (id, email, created_at, soundcloud_id) VALUES ($1, $2, $3, NULL) ON CONFLICT DO NOTHING',
         [id, email, created_at]
       );
       res.status(200).send('User added successfully');

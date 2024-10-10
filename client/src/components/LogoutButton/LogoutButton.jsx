@@ -1,10 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../pages/Home'; 
 import {  useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Logout() {
   const [error, setError] = useState(null);
+  const [url, setUrl] = useState('')
   const navigate = useNavigate();
+  
+
+  async function sendUserUrl(url) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      await axios.post('http://localhost:5000/getUser/id', {
+        url: url,
+        supaUser: user.id,
+      });
+    } catch (err) {
+      console.error("Error sending user URL:", err);
+    }
+  }
+
 
   const handleSignOut = async () => {
     try {
@@ -19,6 +35,12 @@ function Logout() {
 
   return (
     <div>
+      <input
+      type="text"
+      placeholder='Your Profile URL'
+      onChange={(e) => setUrl(e.target.value)}
+      />
+      <button onClick={() => sendUserUrl(url)}>Save URL</button>
       <button onClick={handleSignOut}>Sign Out</button>
       {error && <p>{error}</p>}
     </div>

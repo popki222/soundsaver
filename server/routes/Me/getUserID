@@ -1,14 +1,24 @@
 const express = require("express")
 const router = express.Router()
 const Soundcloud = require('soundcloud.ts').default;
-
+const path = require('path');
+const pool = require(path.join(__dirname, '../../db'));
 
 const soundcloud = new Soundcloud(process.env.SOUNDCLOUD_CLIENT_ID, process.env.SOUNDCLOUD_OAUTH_TOKEN);
 
-async function fetchUserID(url){
+async function fetchUserID(url, supaUser){
     try {
         const user = await soundcloud.users.get(url);
-        return user;
+        const dbID = user.id;
+        const client = await pool.query(
+            `
+            UPDATE users
+            SET soundcloud_id = $1
+            WHERE id = $2;
+        `, [dbID, supaUser]
+        );
+        
+        return user.id;
     } catch (error) {
         console.error('Error fetching user:', error);
         return null;
@@ -16,13 +26,16 @@ async function fetchUserID(url){
 }
 
 
-router.get('/id', async (req, res) => {
+router.post('/id', async (req, res) => {
     try {
-        const url = req.query.url
-        const user = await fetchUserID(url);
-        if(user){
-            console.log(user)
-        }
+        const { url, supaUser } = req.body;
+        const fetchedUser = await fetchUserID(url, supaUser);
+
+        if (fetchedUser) {
+            res.status(200).json({ message: 'SoundCloud ID updated successfully', soundcloud_id: fetchedUser });
+          } else {
+            res.status(500).json({ error: 'Failed to fetch SoundCloud user' });
+          }
     } catch (err) {
         res.status(500).json({error: err})
     }
