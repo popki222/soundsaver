@@ -18,9 +18,13 @@ const parseTrackData = (track) => ({
     permalink_url: track.permalink_url,
 });
 
-async function fetchLikes() {
+async function fetchLikes(userid) {
     try {
-        const likes = await soundcloud.users.likes(process.env.USERID);
+        const response = await pool.query(
+            `SELECT soundcloud_id FROM users WHERE id = $1`, [userid]
+        );
+        const soundcloudID = response.rows[0]?.soundcloud_id;
+        const likes = await soundcloud.users.likes(soundcloudID);
         return likes;
     } catch (error) {
         console.error('Error fetching likes:', error);
@@ -28,8 +32,6 @@ async function fetchLikes() {
     }
 }
 
-// delete active and scan_time from songs and update query
-//make sure to test a true and false with same songid but diff userid
 async function saveScannedSongs(likedSongs, userid) {
     try {
         const client = await pool.connect();
@@ -80,8 +82,9 @@ async function deactivateOldSongs() {
 router.get('/scan', async (req, res) => {
     try {
         const userid = req.query.userid;
-        const userLikes = await fetchLikes(); //probably will have to pass scUserid from client - for later
+        const userLikes = await fetchLikes(userid);
         if (userLikes) {
+            console.log("likes successfully fetched");
             const success = await saveScannedSongs(userLikes, userid);
             if (success) {
                 await deactivateOldSongs();
