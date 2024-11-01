@@ -26,7 +26,9 @@ async function fetchDatabaseSongs(userID) {
             ON 
                 s.id = us.song_id
             WHERE 
-                us.user_id = $1;
+                us.user_id = $1
+            ORDER BY
+                us.scan_time ASC;
         `
         const res = await client.query(userSongsInfoQuery, [userID])
         client.release()
