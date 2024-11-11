@@ -15,6 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 export default function Home() {
   const [session, setSession] = useState(null);
   const [isUserChecked, setIsUserChecked] = useState(false);
+  const [scUser, setScUser] = useState("");
   
 
   useEffect(() => {
@@ -66,6 +67,20 @@ export default function Home() {
       handleUser();
     }
   }, [session]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/getUser/?email=${session.user.email}`);
+        if (response) {
+          setScUser(response.data.username);
+          console.log(response.data.username)
+        }
+      } catch (error) {
+        console.error("Error fetching SoundCloud user:", error);
+      }
+    })();
+}, []);
   
 
   if (!session) {
@@ -75,6 +90,7 @@ export default function Home() {
     return (
       <>
         <Navbar />
+        <p className="scUserText">{scUser ? `Welcome back, ${scUser}!` : 'Loading...'}</p>
         <Card userid={session.user.id} />
         <Footer />
         

@@ -44,3 +44,8 @@
   color: black;
   font-size: 24px;
 }
+
+.scUserText {
+  color: black;
+  font-weight: bold; /* Add any other styling you need */
+}
