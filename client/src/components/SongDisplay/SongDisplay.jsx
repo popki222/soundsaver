@@ -68,7 +68,11 @@ function SongDisplay({ userid }) {
                           <img src={user.artwork_url}></img>
                         </a>
                       </td>
-                      <td>{user.title}</td>
+                      <td>
+                        <a href={user.permalink_url} target="_blank" rel="noopener noreferrer" className="customLink">
+                          {user.title}
+                        </a>
+                      </td>
                       <td>{user.artist}</td>
                 </tr>
               })

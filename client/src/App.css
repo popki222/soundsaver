@@ -47,5 +47,13 @@
 
 .scUserText {
   color: black;
-  font-weight: bold; /* Add any other styling you need */
+  font-weight: bold;
+}
+
+.customLink {
+  color: black; 
+}
+
+.customLink:hover {
+  color: #f84c4c;
 }

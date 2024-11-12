@@ -69,18 +69,20 @@ export default function Home() {
   }, [session]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await axios.get(`http://localhost:5000/getUser/?email=${session.user.email}`);
-        if (response) {
-          setScUser(response.data.username);
-          console.log(response.data.username)
+    if (session){
+      (async () => {
+        try {
+          const response = await axios.get(`http://localhost:5000/getUser/?email=${session.user.email}`);
+          if (response) {
+            setScUser(response.data.username);
+            console.log(response.data.username)
+          }
+        } catch (error) {
+          console.error("Error fetching SoundCloud user:", error);
         }
-      } catch (error) {
-        console.error("Error fetching SoundCloud user:", error);
-      }
-    })();
-}, []);
+      })();
+    }
+}, [session]);
   
 
   if (!session) {
