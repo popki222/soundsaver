@@ -8,6 +8,7 @@ function SongDisplay({ userid }) {
   const [filter, setFilter] = useState(true);
   const [click, setClick] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
+  const [scanMessage, setScanMessage] = useState('');
 
   useEffect(()=>{
     axios.get(`http://localhost:5000/db?userid=${userid}`)
@@ -27,11 +28,25 @@ function SongDisplay({ userid }) {
 
   const runScan = async () => {
     try{
-        await axios.get(`http://localhost:5000/get/scan?userid=${userid}`)
-        setClick(click+1);
+        const response = await axios.get(`http://localhost:5000/get/scan?userid=${userid}`);
+
+        if (response.status === 200) {
+          setScanMessage('Songs fetched and stored successfully.');
+          setClick(click+1);
+        }
+
     } catch(err){
+      if (err.response && err.response.status === 400) {
+        setScanMessage('Cannot scan - User already scanned today.');
+      } else {
+        setScanMessage('An error occurred during the scan.');
         console.log(err)
+      }
     }
+
+    setTimeout(() => {
+      setScanMessage('');
+    }, 6000);
   };
 
 
@@ -90,6 +105,7 @@ function SongDisplay({ userid }) {
         </span>
       </button>
       </div>
+    {scanMessage && <p className={classes.scanMessage}>{scanMessage}</p>}
     </div>
   );
 }

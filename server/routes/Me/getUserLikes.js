@@ -67,8 +67,6 @@ async function saveScannedSongs(likedSongs, userid) {
     } catch (error) {
         console.error('Error saving songs:', error.stack);
         return false;
-    } finally {
-        await client.release();
     }
 }
 
