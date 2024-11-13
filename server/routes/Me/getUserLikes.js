@@ -54,11 +54,21 @@ async function saveScannedSongs(likedSongs, userid) {
             `
             await client.query(userSongsQuery, [userid, songPkey]);
         }));
+
+        const updateScanTime = `
+            UPDATE users
+            SET last_scan = CURRENT_TIMESTAMP
+            WHERE id = $1;
+        `;
+        await client.query(updateScanTime, [userid]);
+
         await client.release();
         return true;
     } catch (error) {
         console.error('Error saving songs:', error.stack);
         return false;
+    } finally {
+        await client.release();
     }
 }
 
@@ -78,26 +88,54 @@ async function deactivateOldSongs(userid) {
     }
 }
 
+async function fetchLastScan(userid) {
+    const client = await pool.connect();
+    try {
+        const fetchLastScan = `
+            SELECT CASE 
+                WHEN last_scan < CURRENT_DATE THEN true
+                ELSE false
+            END AS scannable
+            FROM users
+            WHERE id = $1;
+        `;
+
+        const result = await client.query(fetchLastScan, [userid]);
+        return result.rows[0]?.scannable || false;
+    } catch (error) {
+        console.error('Error deactivating old songs:', error);
+    } finally {
+        await client.release();
+    }
+}
 
 router.get('/scan', async (req, res) => {
-    try {
-        const userid = req.query.userid;
-        const userLikes = await fetchLikes(userid);
-        if (userLikes) {
-            console.log("likes successfully fetched");
-            const success = await saveScannedSongs(userLikes, userid);
-            if (success) {
-                await deactivateOldSongs(userid);
-                res.status(200).send('Songs fetched and stored successfully');
+    const userid = req.query.userid;
+    const canScan = await fetchLastScan(userid);
+
+    if (canScan) {
+        try {
+            const userLikes = await fetchLikes(userid);
+            if (userLikes) {
+                console.log("likes successfully fetched");
+                const success = await saveScannedSongs(userLikes, userid);
+                if (success) {
+                    await deactivateOldSongs(userid);
+                    res.status(200).send('Songs fetched and stored successfully');
+                } else {
+                    res.status(500).send('Error saving songs to database');
+                }
             } else {
-                res.status(500).send('Error saving songs to database');
+                res.status(500).send('Error fetching user likes from SoundCloud');
             }
-        } else {
-            res.status(500).send('Error fetching user likes from SoundCloud');
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to process scan' });
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to process scan' });
+    } else {
+        res.status(400).json({ error: 'User already scanned today' });
     }
 });
+
+
 
 module.exports = router;
