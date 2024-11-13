@@ -62,19 +62,19 @@ async function saveScannedSongs(likedSongs, userid) {
     }
 }
 
-async function deactivateOldSongs() {
+async function deactivateOldSongs(userid) {
     const client = await pool.connect();
     try {
         const searchActive = `
             UPDATE user_songs
             SET active = false
-            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = true;
+            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = true AND user_id = $1 ;
         `;
-        await client.query(searchActive);
+        await client.query(searchActive, [userid]);
     } catch (error) {
         console.error('Error deactivating old songs:', error);
     } finally {
-        await client.end();
+        await client.release();
     }
 }
 
@@ -87,7 +87,7 @@ router.get('/scan', async (req, res) => {
             console.log("likes successfully fetched");
             const success = await saveScannedSongs(userLikes, userid);
             if (success) {
-                await deactivateOldSongs();
+                await deactivateOldSongs(userid);
                 res.status(200).send('Songs fetched and stored successfully');
             } else {
                 res.status(500).send('Error saving songs to database');
