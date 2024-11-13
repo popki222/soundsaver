@@ -92,7 +92,7 @@ export default function Home() {
     return (
       <>
         <Navbar />
-        <p className="scUserText">{scUser ? `Welcome back, ${scUser}!` : 'Loading...'}</p>
+        <p className="scUserText">{scUser ? `Welcome back, ${scUser}!` : 'Input soundcloud user in Profile tab'}</p>
         <Card userid={session.user.id} />
         <Footer />
         

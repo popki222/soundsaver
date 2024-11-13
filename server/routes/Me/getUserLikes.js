@@ -91,7 +91,7 @@ async function fetchLastScan(userid) {
     try {
         const fetchLastScan = `
             SELECT CASE 
-                WHEN last_scan < CURRENT_DATE THEN true
+                WHEN last_scan < CURRENT_DATE OR last_scan IS NULL THEN true
                 ELSE false
             END AS scannable
             FROM users
