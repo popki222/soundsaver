@@ -28,6 +28,7 @@ function SongDisplay({ userid }) {
 
   const runScan = async () => {
     try{
+        setScanMessage('scanning...');
         const response = await axios.get(`http://localhost:5000/get/scan?userid=${userid}`);
 
         if (response.status === 200) {
@@ -52,6 +53,7 @@ function SongDisplay({ userid }) {
 
   return (
     <div>
+      <h1>{filter? 'Current Soundcloud Library' : 'Missing Tracks'}</h1>
       <div className={classes.searchBar}>
         <input className={classes.searchBar2}
           type="text"
@@ -106,6 +108,7 @@ function SongDisplay({ userid }) {
       </button>
       </div>
     {scanMessage && <p className={classes.scanMessage}>{scanMessage}</p>}
+    {scanMessage == 'scanning...' && <div className={classes.spinner}></div>}
     </div>
   );
 }

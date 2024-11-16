@@ -41,12 +41,9 @@ function Card({ userid }) {
   
   return (
     <div className={classes.card} style={{ boxShadow: shadow }}>
-      
-      <h1>Your Soundcloud Library</h1>
 
       <SongDisplay userid={userid}/>
 
-      
     </div>
   );
 }
