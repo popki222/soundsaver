@@ -81,9 +81,7 @@ function SongDisplay({ userid }) {
               filteredData.map((user, index) => {
                 return <tr key={index}>
                       <td>
-                        <a href={user.permalink_url}>
                           <img src={user.artwork_url}></img>
-                        </a>
                       </td>
                       <td>
                         <a href={user.permalink_url} target="_blank" rel="noopener noreferrer" className="customLink">
@@ -107,8 +105,10 @@ function SongDisplay({ userid }) {
         </span>
       </button>
       </div>
-    {scanMessage && <p className={classes.scanMessage}>{scanMessage}</p>}
-    {scanMessage == 'scanning...' && <div className={classes.spinner}></div>}
+      <div className={classes.messageContainer}>
+        {scanMessage && <p className={classes.scanMessage}>{scanMessage}</p>}
+        {scanMessage === 'scanning...' && <div className={classes.spinner}></div>}
+      </div>
     </div>
   );
 }
