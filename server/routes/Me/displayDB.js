@@ -2,47 +2,58 @@ require('dotenv').config();
 const express = require("express")
 const axios = require('axios')
 const router = express.Router()
-const path = require('path');
-const pool = require(path.join(__dirname, '../../db'));
+//const path = require('path');
+//const pool = require(path.join(__dirname, '../../db'));
+const { supabase } = require('../../utils/authenticate');
+
 
 
 async function fetchDatabaseSongs(userID) {
     try{
-        const client = await pool.connect();
-        const userSongsInfoQuery = `
-            SELECT 
-                s.id, 
-                s.track_id, 
-                s.title, 
-                s.artist, 
-                s.artwork_url, 
-                s.permalink_url, 
-                us.active, 
-                us.scan_time
-            FROM 
-                user_songs us
-            JOIN 
-                songs s 
-            ON 
-                s.id = us.song_id
-            WHERE 
-                us.user_id = $1
-            ORDER BY
-                us.scan_time ASC;
-        `
-        const res = await client.query(userSongsInfoQuery, [userID])
-        client.release()
-        return res.rows
-        
-    } catch(err) {
-        console.log(err)
+        const { data, error } = await supabase
+        .from('user_songs')
+            .select(`
+                song_id,
+                active,
+                scan_time,
+                songs (
+                    id,
+                    track_id,
+                    title,
+                    artist,
+                    artwork_url,
+                    permalink_url
+                )
+            `)
+            .eq('user_id', userID)
+            .order('scan_time', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching songs from Supabase:', error);
+            return null;
+        }
+
+        const formattedData = data.map((item) => ({
+            id: item.songs.id,
+            track_id: item.songs.track_id,
+            title: item.songs.title,
+            artist: item.songs.artist,
+            artwork_url: item.songs.artwork_url,
+            permalink_url: item.songs.permalink_url,
+            active: item.active,
+            scan_time: item.scan_time,
+        }));
+
+        return formattedData;
+    } catch (err) {
+        console.error('Error in fetchDatabaseSongs:', err);
+        return null;
     }
-    
 }
 
 router.get('/', async (req, res) => {
     try {
-        const currUserID = req.query.userid;
+        const currUserID = req.user.id;
         const dbLikes = await fetchDatabaseSongs(currUserID);
         if (dbLikes) {
             res.status(200).send(dbLikes);

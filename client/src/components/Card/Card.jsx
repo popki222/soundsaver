@@ -4,7 +4,7 @@ import classes from './Card.module.css';
 import axios from 'axios';
 import SongDisplay from '../SongDisplay/SongDisplay';
 
-function Card({ userid }) {
+function Card() {
   const [shadow, setShadow] = useState('0 3px 6px rgba(0, 0, 0, 0.2)');
 
   const handleMouseMove = (e) => {
@@ -42,7 +42,7 @@ function Card({ userid }) {
   return (
     <div className={classes.card} style={{ boxShadow: shadow }}>
 
-      <SongDisplay userid={userid}/>
+      <SongDisplay />
 
     </div>
   );

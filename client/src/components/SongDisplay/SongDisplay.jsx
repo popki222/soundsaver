@@ -3,7 +3,7 @@ import classes from './SongDisplay.module.css';
 import axios from 'axios';
 import { supabase } from '../../utils/supabase';
 
-function SongDisplay({ userid }) {
+function SongDisplay() {
   const [data, setData] = useState([])
   const [filter, setFilter] = useState(true);
   const [click, setClick] = useState(0)
@@ -20,21 +20,30 @@ function SongDisplay({ userid }) {
   }, []);
 
 
-  useEffect(()=>{
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        if (user) {
-          const response = await axios.get(`http://localhost:5000/db?userid=${user.id}`);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+  
+        if (session && session.user) {
+          const response = await axios.get('http://localhost:5000/db', {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
           setData(response.data);
         } else {
-          console.error('No user found!');
+          console.error('No session or user found!');
         }
       } catch (err) {
         console.error('Error fetching data:', err);
       }
     };
+  
     fetchData();
-  }, [click, user]);
+  }, [click]);
 
   const handleToggle = (type) => {
     setFilter(type);
