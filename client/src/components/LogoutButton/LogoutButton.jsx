@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../pages/Home'; 
+import { supabase } from '../../utils/supabase';
 import {  useNavigate } from 'react-router-dom';
 import axios from 'axios';
 

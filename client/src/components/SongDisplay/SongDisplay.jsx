@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import musicHeart from '../../assets/music_heart.png';
 import classes from './SongDisplay.module.css';
 import axios from 'axios';
+import { supabase } from '../../utils/supabase';
 
 function SongDisplay({ userid }) {
   const [data, setData] = useState([])
@@ -9,12 +9,32 @@ function SongDisplay({ userid }) {
   const [click, setClick] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [scanMessage, setScanMessage] = useState('');
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, []);
+
 
   useEffect(()=>{
-    axios.get(`http://localhost:5000/db?userid=${userid}`)
-    .then(res => setData(res.data))
-    .catch(err => console.log(err))
-  }, [click])
+    const fetchData = async () => {
+      try {
+        if (user) {
+          const response = await axios.get(`http://localhost:5000/db?userid=${user.id}`);
+          setData(response.data);
+        } else {
+          console.error('No user found!');
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      }
+    };
+    fetchData();
+  }, [click, user]);
 
   const handleToggle = (type) => {
     setFilter(type);
@@ -28,8 +48,9 @@ function SongDisplay({ userid }) {
 
   const runScan = async () => {
     try{
+        const { data: { user } } = await supabase.auth.getUser();
         setScanMessage('scanning...');
-        const response = await axios.get(`http://localhost:5000/get/scan?userid=${userid}`);
+        const response = await axios.get(`http://localhost:5000/get/scan?userid=${user.id}`);
 
         if (response.status === 200) {
           setScanMessage('Songs fetched and stored successfully.');
@@ -50,6 +71,15 @@ function SongDisplay({ userid }) {
     }, 6000);
   };
 
+  const removeTrack = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const response = await axios.delete(`http://localhost:5000/song/remove?userid=${user.id}`);
+      
+    } catch (error) {
+      
+    }
+  }
 
   return (
     <div>
@@ -74,6 +104,7 @@ function SongDisplay({ userid }) {
               <th></th>
               <th>Title</th>
               <th>Artist</th>
+              
             </tr>
           </thead>
           <tbody>
@@ -89,6 +120,7 @@ function SongDisplay({ userid }) {
                         </a>
                       </td>
                       <td>{user.artist}</td>
+                      {filter == false && <button>Remove</button>}
                 </tr>
               })
             }
