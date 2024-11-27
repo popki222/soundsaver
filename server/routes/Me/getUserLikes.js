@@ -6,6 +6,8 @@ delete require.cache[require.resolve('soundcloud.ts')];
 const Soundcloud = require('soundcloud.ts').default;
 const path = require('path');
 const pool = require(path.join(__dirname, '../../db'));
+const { supabase } = require('../../utils/authenticate');
+
 
 const soundcloud = new Soundcloud(process.env.SOUNDCLOUD_CLIENT_ID, process.env.SOUNDCLOUD_OAUTH_TOKEN);
 
@@ -20,12 +22,22 @@ const parseTrackData = (track) => ({
 
 async function fetchLikes(userid) {
     try {
-        const response = await pool.query(
-            `SELECT soundcloud_id FROM users WHERE id = $1`, [userid]
-        );
-        const soundcloudID = response.rows[0]?.soundcloud_id;
-        const likes = await soundcloud.users.likes(soundcloudID);
-        return likes;
+        const { data, error } = await supabase
+            .from('users')
+            .select('soundcloud_id')
+            .eq('id', userid);
+        if (error) {
+            console.error('Error fetching soundcloudId from users table', error);
+            return null;
+        }
+        if (data && data.length > 0) {
+            const soundcloudId = data[0].soundcloud_id
+            const likes = await soundcloud.users.likes(soundcloudId);
+            return likes;
+        } else {
+            console.error('No user found with the provided userid');
+            return null;
+        }
     } catch (error) {
         console.error('Error fetching likes:', error);
         return null;
@@ -34,36 +46,66 @@ async function fetchLikes(userid) {
 
 async function saveScannedSongs(likedSongs, userid) {
     try {
-        const client = await pool.connect();
-        await Promise.all(likedSongs.map(async (song) => {
-            const parsedSong = parseTrackData(song);
-            const { track_id, title, artist, artwork_url, permalink_url } = parsedSong;
+        await Promise.all(
+            likedSongs.map(async (song) => {
+                const parsedSong = parseTrackData(song);
+                const { track_id, title, artist, artwork_url, permalink_url } = parsedSong;
 
-            const query = `
-                INSERT INTO songs (track_id, title, artist, artwork_url, permalink_url)
-                VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (track_id) DO UPDATE SET scan_time = CURRENT_TIMESTAMP
-                RETURNING id;
-            `;
-            const songResult = await client.query(query, [track_id, title, artist, artwork_url, permalink_url]);
-            const songPkey = songResult.rows[0].id;
-            const userSongsQuery = `
-                INSERT INTO user_songs (user_id, song_id, added_at, active, scan_time)
-                VALUES ($1, $2, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP )
-                ON CONFLICT (user_id, song_id) DO UPDATE SET active = true, scan_time = CURRENT_TIMESTAMP;
-            `
-            await client.query(userSongsQuery, [userid, songPkey]);
-        }));
+                const { data: songData, error: songError } = await supabase
+                    .from('songs')
+                    .upsert({
+                        track_id,
+                        title,
+                        artist,
+                        artwork_url,
+                        permalink_url,
+                        scan_time: new Date().toISOString(),
+                    }, { 
+                        onConflict: ['track_id'],
+                        returning: 'representation'
+                    })
+                    .select('id', 'scan_time')
+                    .single();
 
-        const updateScanTime = `
-            UPDATE users
-            SET last_scan = CURRENT_TIMESTAMP
-            WHERE id = $1;
-        `;
-        await client.query(updateScanTime, [userid]);
+                if (songError) {
+                    console.error('Error inserting/updating song:', songError);
+                    return;
+                }
 
-        await client.release();
+
+                const songPkey = songData.id;
+                const scanTime = songData.scan_time;
+
+                const { error: userSongsError } = await supabase
+                    .from('user_songs')
+                    .upsert({
+                        user_id: userid,
+                        song_id: songPkey,
+                        added_at: scanTime,
+                        active: true,
+                        scan_time: scanTime,
+                    }, { 
+                        onConflict: ['user_id', 'song_id'],
+                        returning: 'representation'
+                    });
+
+                if (userSongsError) {
+                    console.error('Error inserting/updating user_songs:', userSongsError);
+                }
+
+            })
+        );
+        const { error } = await supabase
+            .from('users')
+            .update({ last_scan: new Date().toISOString() })
+            .eq('id', userid);
+
+        if (error) {
+            console.error('Error updating last_scan on user table', error);
+        }
+        
         return true;
+
     } catch (error) {
         console.error('Error saving songs:', error.stack);
         return false;
@@ -71,66 +113,70 @@ async function saveScannedSongs(likedSongs, userid) {
 }
 
 async function deactivateOldSongs(userid) {
-    const client = await pool.connect();
     try {
-        const searchActive = `
-            UPDATE user_songs
-            SET active = false
-            WHERE scan_time < NOW() - INTERVAL '2 minutes' AND active = true AND user_id = $1 ;
-        `;
-        await client.query(searchActive, [userid]);
+        const { error } = await supabase
+            .from('user_songs')
+            .update({ active: false })
+            .lt('scan_time', new Date(Date.now() - 2 * 60 * 1000).toISOString()) 
+            .eq('active', true)
+            .eq('user_id', userid);
+
+        if (error) {
+            console.error('Error deactivating old songs:', error);
+            return false;
+        }
+        return true;
     } catch (error) {
-        console.error('Error deactivating old songs:', error);
-    } finally {
-        await client.release();
+        console.error('Error in deactivateOldSongs:', error.stack);
     }
 }
 
-async function fetchLastScan(userid) {
-    const client = await pool.connect();
+async function fetchLastScan(userId) {
     try {
-        const fetchLastScan = `
-            SELECT CASE 
-                WHEN last_scan < CURRENT_DATE OR last_scan IS NULL THEN true
-                ELSE false
-            END AS scannable
-            FROM users
-            WHERE id = $1;
-        `;
-
-        const result = await client.query(fetchLastScan, [userid]);
-        return result.rows[0]?.scannable || false;
-    } catch (error) {
-        console.error('Error deactivating old songs:', error);
-    } finally {
-        await client.release();
-    }
+        const { data, error } = await supabase.rpc('is_user_scannable', { user_id: userId });
+    
+        if (error) {
+          console.error('Error running RPC:', error);
+          return null;
+        }
+    
+        return data;
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        return null;
+      }
 }
 
 router.get('/scan', async (req, res) => {
-    const userid = req.query.userid;
-    const canScan = await fetchLastScan(userid);
-
-    if (canScan) {
-        try {
-            const userLikes = await fetchLikes(userid);
-            if (userLikes) {
-                console.log("likes successfully fetched");
-                const success = await saveScannedSongs(userLikes, userid);
-                if (success) {
-                    await deactivateOldSongs(userid);
-                    res.status(200).send('Songs fetched and stored successfully');
-                } else {
-                    res.status(500).send('Error saving songs to database');
-                }
-            } else {
-                res.status(500).send('Error fetching user likes from SoundCloud');
-            }
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to process scan' });
+    const userid = req.user.id;
+    
+    try {
+        const canScan = await fetchLastScan(userid);
+        if (!canScan) {
+            return res.status(400).json({ error: 'User already scanned today' });
         }
-    } else {
-        res.status(400).json({ error: 'User already scanned today' });
+
+        const userLikes = await fetchLikes(userid);
+        if (!userLikes) {
+            return res.status(500).send('Error fetching user likes from SoundCloud');
+        }
+
+        console.log("Likes successfully fetched");
+
+        const songsSavedSuccessfully = await saveScannedSongs(userLikes, userid);
+        if (!songsSavedSuccessfully) {
+            return res.status(500).send('Error saving songs to database');
+        }
+
+        const deactivated = await deactivateOldSongs(userid);
+        if (!deactivated) {
+            return res.status(500).send('Error deactivating missing songs');
+        }
+
+        res.status(200).send('Songs fetched and stored successfully');
+    } catch (error) {
+        console.error('Unexpected error in scan route:', error);
+        res.status(500).json({ error: 'Failed to process scan' });
     }
 });
 

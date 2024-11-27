@@ -10,11 +10,14 @@ function SongDisplay() {
   const [searchQuery, setSearchQuery] = useState('')
   const [scanMessage, setScanMessage] = useState('');
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(user);
+      setSession(session);
     };
     fetchUser();
   }, []);
@@ -23,10 +26,6 @@ function SongDisplay() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-  
         if (session && session.user) {
           const response = await axios.get('http://localhost:5000/db', {
             headers: {
@@ -57,9 +56,12 @@ function SongDisplay() {
 
   const runScan = async () => {
     try{
-        const { data: { user } } = await supabase.auth.getUser();
         setScanMessage('scanning...');
-        const response = await axios.get(`http://localhost:5000/get/scan?userid=${user.id}`);
+        const response = await axios.get(`http://localhost:5000/get/scan`,{
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
         if (response.status === 200) {
           setScanMessage('Songs fetched and stored successfully.');
