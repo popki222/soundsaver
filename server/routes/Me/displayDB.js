@@ -2,54 +2,26 @@ require('dotenv').config();
 const express = require("express")
 const axios = require('axios')
 const router = express.Router()
-//const path = require('path');
-//const pool = require(path.join(__dirname, '../../db'));
 const { supabase } = require('../../utils/authenticate');
 
 
-
 async function fetchDatabaseSongs(userID) {
-    try{
+    try {
         const { data, error } = await supabase
-        .from('user_songs')
-            .select(`
-                song_id,
-                active,
-                scan_time,
-                songs (
-                    id,
-                    track_id,
-                    title,
-                    artist,
-                    artwork_url,
-                    permalink_url
-                )
-            `)
-            .eq('user_id', userID)
-            .order('scan_time', { ascending: true });
+            .rpc('fetch_user_songs', { input_user_id: userID });
 
         if (error) {
-            console.error('Error fetching songs from Supabase:', error);
-            return null;
+            throw error;
         }
 
-        const formattedData = data.map((item) => ({
-            id: item.songs.id,
-            track_id: item.songs.track_id,
-            title: item.songs.title,
-            artist: item.songs.artist,
-            artwork_url: item.songs.artwork_url,
-            permalink_url: item.songs.permalink_url,
-            active: item.active,
-            scan_time: item.scan_time,
-        }));
-
-        return formattedData;
+        return data;
+        
     } catch (err) {
-        console.error('Error in fetchDatabaseSongs:', err);
-        return null;
+        console.log(err);
     }
 }
+
+
 
 router.get('/', async (req, res) => {
     try {

@@ -57,9 +57,16 @@ function SongDisplay() {
 
   const runScan = async () => {
     try{
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        
         setScanMessage('scanning...');
-        const response = await axios.get(`http://localhost:5000/get/scan?userid=${user.id}`);
+        const response = await axios.get(`http://localhost:5000/get/scan`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          }
+        });
 
         if (response.status === 200) {
           setScanMessage('Songs fetched and stored successfully.');
