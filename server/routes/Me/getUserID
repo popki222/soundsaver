@@ -1,23 +1,22 @@
 const express = require("express")
 const router = express.Router()
 const Soundcloud = require('soundcloud.ts').default;
-const path = require('path');
-const pool = require(path.join(__dirname, '../../db'));
-
+const { supabase } = require('../../utils/authenticate');
 const soundcloud = new Soundcloud(process.env.SOUNDCLOUD_CLIENT_ID, process.env.SOUNDCLOUD_OAUTH_TOKEN);
 
 async function fetchUserID(url, supaUser){
     try {
         const user = await soundcloud.users.get(url);
         const dbID = user.id;
-        const client = await pool.query(
-            `
-            UPDATE users
-            SET soundcloud_id = $1
-            WHERE id = $2;
-        `, [dbID, supaUser]
-        );
-        
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ soundcloud_id: dbID })
+            .eq('id', supaUser);
+        if (error) {
+            console.error('Error updating soundcloud_id:', error);
+            return null;
+        }
         return user.id;
     } catch (err) {
         console.error('Error fetching user:', err);
@@ -40,16 +39,16 @@ async function fetchScUser(scID) {
 
 async function fetchScID(email) {
     try {
-        const result = await pool.query(
-            `
-            SELECT soundcloud_id
-            FROM users
-            WHERE email = $1
-        `, [email]
-        );
-        
-        return result.rows[0]?.soundcloud_id || null;
+        const { data, error } = await supabase
+            .from('users')
+            .select('soundcloud_id')
+            .eq('email', email);
 
+        if (error) {
+            console.error('Error fetching soundcloud_id:', error);
+            return null;
+        }
+        return data[0]?.soundcloud_id || null;
     } catch (err) {
         console.error('Error fetching user:', err);
         return null;
@@ -59,7 +58,7 @@ async function fetchScID(email) {
 
 router.get('/', async (req, res) => {
     try {
-        const email = req.query.email;
+        const email = req.user.email;
         const scID = await fetchScID(email);
 
         if (!scID) {

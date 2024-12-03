@@ -1,11 +1,8 @@
 require('dotenv').config();
 const express = require("express")
-const axios = require('axios')
 const router = express.Router()
 delete require.cache[require.resolve('soundcloud.ts')];
 const Soundcloud = require('soundcloud.ts').default;
-const path = require('path');
-const pool = require(path.join(__dirname, '../../db'));
 const { supabase } = require('../../utils/authenticate');
 
 const soundcloud = new Soundcloud(process.env.SOUNDCLOUD_CLIENT_ID, process.env.SOUNDCLOUD_OAUTH_TOKEN);
@@ -93,7 +90,6 @@ async function deactivateOldSongs(userid) {
 }
 
 async function fetchLastScan(userID) {
-    const client = await pool.connect();
     try {
         const { data, error } = await supabase
             .rpc('fetch_last_scan', { input_user_id: userID });
@@ -103,8 +99,6 @@ async function fetchLastScan(userID) {
         return data;
     } catch (error) {
         console.error('Error deactivating old songs:', error);
-    } finally {
-        await client.release();
     }
 }
 

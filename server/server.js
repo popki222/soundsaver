@@ -17,7 +17,7 @@ const getDbLikes = require("./routes/Me/displayDB");
 const addUser = require("./routes/Me/newUser");
 const getUserID = require("./routes/Me/getUserID");
 
-app.use("/getUser", getUserID);
+app.use("/getUser", authenticate, getUserID);
 app.use("/user", addUser);
 app.use("/db", authenticate, getDbLikes);
 app.use("/me", authenticate, meFunctions);

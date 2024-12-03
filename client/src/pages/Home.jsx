@@ -70,7 +70,15 @@ export default function Home() {
     if (session){
       (async () => {
         try {
-          const response = await axios.get(`http://localhost:5000/getUser/?email=${session.user.email}`);
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          const response = await axios.get(`http://localhost:5000/getUser/`, {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
           if (response) {
             setScUser(response.data.username);
             console.log(response.data.username)

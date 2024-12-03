@@ -9,13 +9,10 @@ async function fetchDatabaseSongs(userID) {
     try {
         const { data, error } = await supabase
             .rpc('fetch_user_songs', { input_user_id: userID });
-
         if (error) {
             throw error;
         }
-
-        return data;
-        
+        return data;  
     } catch (err) {
         console.log(err);
     }
