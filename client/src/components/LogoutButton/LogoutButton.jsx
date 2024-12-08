@@ -11,10 +11,13 @@ function Logout() {
 
   async function sendUserUrl(url) {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
       await axios.post('http://localhost:5000/getUser/id', {
         url: url,
-        supaUser: user.id,
+      }, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
       });
     } catch (err) {
       console.error("Error sending user URL:", err);

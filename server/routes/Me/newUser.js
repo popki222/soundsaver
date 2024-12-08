@@ -2,17 +2,22 @@ const express = require("express")
 const router = express.Router()
 const path = require('path');
 const pool = require(path.join(__dirname, '../../db'));
+const { supabase } = require('../../utils/authenticate');
 
 
 router.post('/addUser', async (req, res) => {
     const { id, email, created_at } = req.body;
     try {
-      const result = await pool.query(
-        'INSERT INTO users (id, email, created_at, soundcloud_id) VALUES ($1, $2, $3, NULL) ON CONFLICT DO NOTHING',
-        [id, email, created_at]
-      );
+      const { error } = await supabase
+        .rpc('insert_user',
+        { p_id: id, p_email: email, p_created_at: created_at })
+      if (error) {
+        console.error('error adding new user: ', error );
+        throw new Error(`new user insert error for user ${id}`);
+      }
       res.status(200).send('User added successfully');
-    } catch (err) {
+    } 
+     catch (err) {
       console.error(err);
       res.status(500).send('Error adding user');
     }
@@ -21,11 +26,18 @@ router.post('/addUser', async (req, res) => {
 router.get('/checkUser', async (req, res) => {
   try {
     const email = req.query.email;
-    const result = await pool.query(
-      'SELECT COUNT(*) FROM users WHERE email = $1',
-      [email]
-    );
-    const userExists = Number(result.rows[0].count) === 1;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email);
+
+    if (error) {
+      console.error('Error fetching user email:', error);
+      res.status(500).send('Error fetching user email');
+      return;
+    }
+    const userExists = userExists = data.length > 0;
 
     if (userExists) {
       res.status(200).send(userExists);

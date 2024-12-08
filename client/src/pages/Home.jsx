@@ -38,10 +38,11 @@ export default function Home() {
       console.error('Error adding user:', err);
     }
   };
-  
+
   const checkUserExists = async (email) => {
     try {
       const response = await axios.get(`http://localhost:5000/user/checkUser?email=${email}`);
+      console.log(response.data)
       return response.data;
     } catch (err) {
       console.error('Error checking user:', err);
@@ -53,8 +54,12 @@ export default function Home() {
     const handleUser = async () => {
       console.log("handleUser ran: checked if user already exists")
       if (session && !isUserChecked) {
+        console.log("running checkUserExists", session.user.email)
         const userExists = await checkUserExists(session.user.email);
+        console.log("this is userexists: ", userExists);
+
         if (!userExists) {
+          console.log('user doesnt exist , running adduser')
           await addUser(session.user);
         }
         setIsUserChecked(true);

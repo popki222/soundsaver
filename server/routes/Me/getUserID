@@ -80,7 +80,8 @@ router.get('/', async (req, res) => {
 
 router.post('/id', async (req, res) => {
     try {
-        const { url, supaUser } = req.body;
+        const url = req.body.url;
+        const supaUser = req.user.id;
         const fetchedUser = await fetchUserID(url, supaUser);
 
         if (fetchedUser) {
