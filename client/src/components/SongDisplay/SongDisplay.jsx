@@ -87,10 +87,20 @@ function SongDisplay() {
     }, 6000);
   };
 
-  const removeTrack = async () => {
+  const removeTrack = async (songid) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const response = await axios.delete(`http://localhost:5000/song/remove?userid=${user.id}`);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const response = await axios.delete(`http://localhost:5000/song/delete`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        data: {
+          songId: songid,
+        }
+      });
       
     } catch (error) {
       
@@ -125,8 +135,8 @@ function SongDisplay() {
           </thead>
           <tbody>
             {
-              filteredData.map((user, index) => {
-                return <tr key={index}>
+              filteredData.map((user) => {
+                return <tr key={user.id}>
                       <td>
                           <img src={user.artwork_url}></img>
                       </td>
@@ -136,7 +146,8 @@ function SongDisplay() {
                         </a>
                       </td>
                       <td>{user.artist}</td>
-                      {filter == false && <button>Remove</button>}
+                      {filter == false && 
+                      <button onClick={() => {removeTrack(user.id); setClick(click+1);}}>Remove</button>}
                 </tr>
               })
             }

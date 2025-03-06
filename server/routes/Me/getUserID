@@ -31,7 +31,7 @@ async function fetchScUser(scID) {
         return scUsername;
 
     } catch (err) {
-        console.error('Error fetching user:', err);
+        console.error(`Error fetching user from scID: ${scID}`, err);
         return null;
     }
     
@@ -50,7 +50,7 @@ async function fetchScID(email) {
         }
         return data[0]?.soundcloud_id || null;
     } catch (err) {
-        console.error('Error fetching user:', err);
+        console.error('Error fetching user scID:', err);
         return null;
     }
     
