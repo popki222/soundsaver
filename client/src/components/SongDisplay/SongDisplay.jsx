@@ -103,7 +103,25 @@ function SongDisplay() {
       });
       
     } catch (error) {
+      console.error('Error Deleting song:', error);
+    }
+  }
+
+  const reuploadTrack = async (songid) => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const response = await axios.get(`http://localhost:5000/song/download?songId=${songid}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+      window.location.href = response.data.downloadUrl;
       
+    } catch (error) {
+      console.error('Error reuploading song:', error);
     }
   }
 
@@ -147,7 +165,10 @@ function SongDisplay() {
                       </td>
                       <td>{user.artist}</td>
                       {filter == false && 
-                      <button onClick={() => {removeTrack(user.id); setClick(click+1);}}>Remove</button>}
+                      <>
+                      <button onClick={() => {removeTrack(user.id); setClick(click+1);}}>Remove</button> 
+                      <button onClick={() => {reuploadTrack(user.id); setClick(click+1);}}>Reupload</button>
+                      </>}
                 </tr>
               })
             }
