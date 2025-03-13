@@ -15,6 +15,8 @@ const client = new S3Client({
 });
 const bucketName = process.env.S3_BUCKET_NAME;
 
+//if song is unliked (not deleted) - you shouldnt be able to reupload.
+//but since its just download for now its ok
 async function reuploadSong(songId) {
     try {
 
