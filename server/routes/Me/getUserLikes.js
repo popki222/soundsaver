@@ -33,6 +33,42 @@ async function fetchLikes(userid) {
     }
 }
 
+async function fetchAndSaveUserInfo(userid) {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('soundcloud_id')
+            .eq('id', userid);
+        
+        const soundcloudID = data[0]?.soundcloud_id;
+        const userInfo = await soundcloud.users.get(soundcloudID);
+
+        const updateData = {
+            username: userInfo.username,
+            city: userInfo.city,
+            avatar_url: userInfo.avatar_url,
+            likes_count: userInfo.likes_count,
+            permalink_url: userInfo.permalink_url,
+          };
+          
+          const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', userid);
+        
+        if (profileError) {
+          console.error('Error updating user info:', profileError);
+        } else {
+          console.log('User info updated:', profileData);
+        }
+        
+        
+    } catch (error) {
+        console.error('Error fetching likes:', error);
+        return null;
+    }
+}
+
 async function saveScannedSongs(likedSongs, userid) {
     const chunkSize = 1000;
     for (let i = 0; i < likedSongs.length; i += chunkSize) {
@@ -102,6 +138,7 @@ async function fetchLastScan(userID) {
     }
 }
 
+
 router.get('/scan', async (req, res) => {
     const userid = req.user.id;
     const canScan = await fetchLastScan(userid);
@@ -114,6 +151,7 @@ router.get('/scan', async (req, res) => {
                 const success = await saveScannedSongs(userLikes, userid);
                 if (success) {
                     await deactivateOldSongs(userid);
+                    await fetchAndSaveUserInfo(userid);
                     res.status(200).send('Songs fetched and stored successfully');
                 } else {
                     res.status(500).send('Error saving songs to database');

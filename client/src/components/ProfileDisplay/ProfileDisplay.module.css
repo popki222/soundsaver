@@ -1,0 +1,89 @@
+.profile-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08); /* slightly stronger shadow */
+    padding: 40px;        /* bigger padding */
+    max-width: 700px;     /* larger card width */
+    margin: 50px auto;    /* more vertical spacing */
+    font-family: 'Inter', sans-serif;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;  /* bigger spacing */
+}
+
+.profile-avatar {
+    width: 140px;        /* larger avatar */
+    height: 140px;
+    border-radius: 50%;
+    margin-right: 28px;  /* more spacing */
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 28px;     /* bigger heading */
+    font-weight: 600;
+    color: black;
+}
+
+.profile-info p {
+    margin: 6px 0 0;
+    font-size: 18px;     /* bigger text */
+    color: #666;
+}
+
+.verified-badge {
+    display: inline-block;
+    margin-left: 8px;
+    color: #1db954;
+    font-size: 16px;
+}
+
+.profile-input {
+    width: 80%;           /* wider input */
+    padding: 16px 20px;   /* more padding */
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    font-size: 18px;      /* bigger font */
+    justify-content: center;
+    background-color: #ebebeb;
+    color: #333;
+}
+
+.button {
+    display: inline-block;
+    background-color: #ff5353;
+    color: white;
+    border: none;
+    padding: 16px 32px;  /* bigger buttons */
+    font-size: 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.button:hover {
+    background-color: #ff4141;
+}
+
+.button-outline {
+    background-color: transparent;
+    border: 1px solid #ddd;
+    color: #333;
+    margin-left: 18px;   /* more spacing */
+}
+
+.button-outline:hover {
+    background-color: #f9f9f9;
+}
+
+.h2 {
+    color: black;
+}
+
+h1 {
+    color: #ff6464;
+  }

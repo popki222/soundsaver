@@ -24,6 +24,8 @@ async function fetchUserID(url, supaUser){
     }   
 }
 
+
+
 async function fetchScUser(scID) {
     try {
         const response = await soundcloud.users.get(scID);
@@ -56,6 +58,44 @@ async function fetchScID(email) {
     
 }
 
+//new
+async function fetchAndSaveUserInfo(userid) {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('soundcloud_id')
+            .eq('id', userid);
+        
+        const soundcloudID = data[0]?.soundcloud_id;
+        const userInfo = await soundcloud.users.get(soundcloudID);
+
+        const updateData = {
+            username: userInfo.username,
+            city: userInfo.city,
+            avatar_url: userInfo.avatar_url,
+            likes_count: userInfo.likes_count,
+            permalink_url: userInfo.permalink_url,
+          };
+          
+          const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', userid);
+        
+        if (profileError) {
+          console.error('Error updating user info:', profileError);
+        } else {
+          console.log('User info updated:', profileData);
+        }
+        
+        
+    } catch (error) {
+        console.error('Error fetching likes:', error);
+        return null;
+    }
+}
+//new
+
 router.get('/', async (req, res) => {
     try {
         const email = req.user.email;
@@ -83,8 +123,10 @@ router.post('/id', async (req, res) => {
         const url = req.body.url;
         const supaUser = req.user.id;
         const fetchedUser = await fetchUserID(url, supaUser);
+        
 
         if (fetchedUser) {
+            await fetchAndSaveUserInfo(supaUser);
             res.status(200).json({ message: 'SoundCloud ID updated successfully', soundcloud_id: fetchedUser });
           } else {
             res.status(500).json({ error: 'Failed to fetch SoundCloud user' });

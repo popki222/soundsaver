@@ -7,6 +7,7 @@ import Footer from '../components/Footer/Footer';
 import Card from '../components/Card/Card';
 import axios from 'axios';
 import { supabase } from '../utils/supabase';
+import SongDisplay from '../components/SongDisplay/SongDisplay';
 
 
 
